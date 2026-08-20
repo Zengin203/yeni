@@ -431,14 +431,28 @@ async function buyCar(productId, btnEl) {
     const carRef = doc(db, "users", auth.currentUser.uid, "cars", productId);
 
     await runTransaction(db, async (t) => {
+      // ---- OXUMALAR (bütün yazılardan əvvəl) ----
       const carDoc = await t.get(carRef);
       if (carDoc.exists()) throw new Error("Bu maşın artıq qarajınızdadır!");
 
       const userDoc = await t.get(userRef);
       if (!userDoc.exists()) throw new Error("İstifadəçi tapılmadı!");
-      const balance = Number(userDoc.data().balance) || 0;
+      const userData = userDoc.data();
+      const balance = Number(userData.balance) || 0;
       if (balance < product.price) throw new Error("Balansınız kifayət etmir!");
 
+      const l1Uid = userData.referredBy || null;
+      const l2Uid = userData.referredByL2 || null;
+      const l3Uid = userData.referredByL3 || null;
+
+      let l1Ref = null, l1Doc = null;
+      let l2Ref = null, l2Doc = null;
+      let l3Ref = null, l3Doc = null;
+      if (l1Uid) { l1Ref = doc(db, "users", l1Uid); l1Doc = await t.get(l1Ref); }
+      if (l2Uid) { l2Ref = doc(db, "users", l2Uid); l2Doc = await t.get(l2Ref); }
+      if (l3Uid) { l3Ref = doc(db, "users", l3Uid); l3Doc = await t.get(l3Ref); }
+
+      // ---- YAZILAR ----
       t.update(userRef, {
         balance: increment(-product.price),
         totalInvested: increment(product.price)
@@ -448,6 +462,20 @@ async function buyCar(productId, btnEl) {
         purchasedAt: Date.now(),
         lastClaim: Date.now()
       });
+
+      // İnvestisiya (alış) üzərindən birdəfəlik referal komissiyası
+      if (l1Doc && l1Doc.exists()) {
+        const amt = round2(product.price * REFERRAL_RATES.l1);
+        if (amt > 0) t.update(l1Ref, { balance: increment(amt), referralEarnings: increment(amt) });
+      }
+      if (l2Doc && l2Doc.exists()) {
+        const amt = round2(product.price * REFERRAL_RATES.l2);
+        if (amt > 0) t.update(l2Ref, { balance: increment(amt), referralEarnings: increment(amt) });
+      }
+      if (l3Doc && l3Doc.exists()) {
+        const amt = round2(product.price * REFERRAL_RATES.l3);
+        if (amt > 0) t.update(l3Ref, { balance: increment(amt), referralEarnings: increment(amt) });
+      }
     });
 
     showToast("Təbriklər! Maşın qarajınıza əlavə olundu. 🚗", "success");
