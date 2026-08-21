@@ -180,6 +180,8 @@
     min-width: 56px;
   }
   .nav-item .ni-icon { font-size: 19px; }
+  .nav-item .ni-icon svg { width: 21px; height: 21px; display: block; margin: 0 auto; }
+  .pi svg { width: 18px; height: 18px; display: block; }
   .nav-item.active-tab { color: var(--accent-2); }
 
   .page-view { display: none; animation: fade-in .2s ease; }
@@ -233,7 +235,7 @@
         <div class="stat-mini"><div class="lbl">💰 Balans</div><div class="val tabular" id="stat-balance">$0.00</div></div>
         <div class="stat-mini"><div class="lbl">🚗 İnvestisiya</div><div class="val tabular" id="stat-invested">$0.00</div></div>
         <div class="stat-mini"><div class="lbl">📈 Gündəlik gəlir</div><div class="val tabular positive" id="stat-daily">$0.00</div></div>
-        <div class="stat-mini"><div class="lbl">📊 İllik ROI</div><div class="val tabular positive" id="stat-roi">0%</div></div>
+        <div class="stat-mini"><div class="lbl">📊 Aylıq Gəlirlilik</div><div class="val tabular positive" id="stat-roi">0%</div></div>
       </div>
 
       <div class="hero-gauge-row">
@@ -316,12 +318,12 @@
     </div>
 
     <div class="profile-menu">
-      <button id="deposit-btn" class="profile-btn"><span class="pi">💳</span> Depozit et <span class="arrow">›</span></button>
-      <button id="withdraw-btn" class="profile-btn"><span class="pi">💸</span> Nağdlaşdırma <span class="arrow">›</span></button>
-      <button id="history-btn" class="profile-btn"><span class="pi">📜</span> Əməliyyat tarixçəsi <span class="arrow">›</span></button>
-      <button id="referral-btn" class="profile-btn"><span class="pi">👥</span> Referal komandam <span class="arrow">›</span></button>
-      <button id="password-btn" class="profile-btn"><span class="pi">🔐</span> Profil və Şifrə ayarları <span class="arrow">›</span></button>
-      <button id="logout-btn-2" class="profile-btn danger"><span class="pi">🚪</span> Hesabdan çıxış <span class="arrow">›</span></button>
+      <button id="deposit-btn" class="profile-btn"><span class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5.5" width="19" height="13" rx="2"/><path d="M2.5 9.5h19"/><path d="M6 14.5h4"/></svg></span> Depozit et <span class="arrow">›</span></button>
+      <button id="withdraw-btn" class="profile-btn"><span class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6"/><path d="M6.5 11 12 5.5 17.5 11"/><path d="M5 19h14"/></svg></span> Nağdlaşdırma <span class="arrow">›</span></button>
+      <button id="history-btn" class="profile-btn"><span class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12.5" r="8"/><path d="M12 8v4.5l3 2"/><path d="M9 3.5h6"/></svg></span> Əməliyyat tarixçəsi <span class="arrow">›</span></button>
+      <button id="referral-btn" class="profile-btn"><span class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3"/><path d="M2.5 19c0-3 2.9-5.2 6.5-5.2s6.5 2.2 6.5 5.2"/><circle cx="17.5" cy="9" r="2.4"/><path d="M15.7 14c2.9.3 5 2.3 5 5"/></svg></span> Referal komandam <span class="arrow">›</span></button>
+      <button id="password-btn" class="profile-btn"><span class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15" r="1.4"/></svg></span> Profil və Şifrə ayarları <span class="arrow">›</span></button>
+      <button id="logout-btn-2" class="profile-btn danger"><span class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20H5.5a1.5 1.5 0 0 1-1.5-1.5v-13A1.5 1.5 0 0 1 5.5 4H9"/><path d="M16 16.5 20.5 12 16 7.5"/><path d="M20 12H9"/></svg></span> Hesabdan çıxış <span class="arrow">›</span></button>
     </div>
 
     <p id="uid-display" style="font-size: 10.5px; color: var(--text-faint); word-break: break-all; margin-top:16px; text-align:center;"></p>
@@ -445,6 +447,7 @@
     </div>
     <div class="field"><label>Qiymət ($)</label><input class="input" type="number" id="pf-price" placeholder="1200"></div>
     <div class="field"><label>Gündəlik Gəlir ($)</label><input class="input" type="number" id="pf-income" placeholder="18"></div>
+    <div id="pf-roi-hint" style="font-size:12px;color:var(--text-muted);margin:-8px 0 14px;padding:10px 12px;border-radius:10px;background:var(--surface-2);display:none;"></div>
     <div class="field"><label>Bəyiyyət Gücü (HP)</label><input class="input" id="pf-hp" placeholder="503"></div>
     <div class="field"><label>Mühərrik</label><input class="input" id="pf-engine" placeholder="3.0L Turbo"></div>
     <div class="field"><label>Sürət (0-100)</label><input class="input" id="pf-speed" placeholder="3.8s"></div>
@@ -461,11 +464,11 @@
 
 <nav class="nav" id="main-navigation">
   <div class="nav-inner">
-    <div class="nav-item active-tab" data-target="view-ev"><span class="ni-icon">🏠</span>Ev</div>
-    <div class="nav-item" data-target="view-cars"><span class="ni-icon">🚗</span>Maşınlarım</div>
-    <div class="nav-item" data-target="view-tasks"><span class="ni-icon">📋</span>Tapşırıqlar</div>
-    <div class="nav-item" data-target="view-profile"><span class="ni-icon">👤</span>Profil</div>
-    <div class="nav-item hidden" data-target="view-admin" id="nav-admin"><span class="ni-icon">👑</span>Admin</div>
+    <div class="nav-item active-tab" data-target="view-ev"><span class="ni-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1v-9"/></svg></span>Ev</div>
+    <div class="nav-item" data-target="view-cars"><span class="ni-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16V11.8a2 2 0 0 1 .4-1.2L6 8.2A2 2 0 0 1 7.6 7.5h8.8A2 2 0 0 1 18 8.2l1.6 2.4a2 2 0 0 1 .4 1.2V16"/><rect x="2.5" y="13.5" width="19" height="5.5" rx="1.5"/><circle cx="7" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/></svg></span>Maşınlarım</div>
+    <div class="nav-item" data-target="view-tasks"><span class="ni-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3.5h6a1 1 0 0 1 1 1V5a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-.5a1 1 0 0 1 1-1Z"/><path d="M8.5 11.5h7M8.5 15h7M8.5 8h3"/></svg></span>Tapşırıqlar</div>
+    <div class="nav-item" data-target="view-profile"><span class="ni-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c0-3.5 3.4-6 7.5-6s7.5 2.5 7.5 6"/></svg></span>Profil</div>
+    <div class="nav-item hidden" data-target="view-admin" id="nav-admin"><span class="ni-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5 7 11l5-6.5 5 6.5 4-2.5-1.7 9.7a1 1 0 0 1-1 .8H5.7a1 1 0 0 1-1-.8L3 8.5Z"/></svg></span>Admin</div>
   </div>
 </nav>
 

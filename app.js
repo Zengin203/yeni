@@ -25,6 +25,20 @@ const VIP_TIERS = [
 
 const REFERRAL_RATES = { l1: 0.10, l2: 0.05, l3: 0.02 };
 const CHECKIN_REWARD = 0.25;
+
+// --- Amortizasiya (real avtomobil kimi maşınlar zamanla köhnəlir) ---
+// Gündəlik gəlir tədricən azalır, minimum həddə (əsas gəlirin 55%-i) dayanır.
+const DEPRECIATION_DAILY_RATE = 0.0015;  // gündə ~0.15% azalma
+const DEPRECIATION_FLOOR = 0.55;         // əsas gəlirin minimum 55%-i qalır
+
+function getCarIncome(car, vipRate) {
+  const baseIncome = Number(car.dailyIncome || car.baseIncome || car.income || 0);
+  const ageDays = Math.max(0, (Date.now() - (Number(car.purchasedAt) || Date.now())) / 86400000);
+  const decayFactor = Math.max(DEPRECIATION_FLOOR, 1 - ageDays * DEPRECIATION_DAILY_RATE);
+  const effectiveBase = round2(baseIncome * decayFactor);
+  const actualIncome = round2(effectiveBase * (1 + (vipRate || 0)));
+  return { baseIncome, ageDays: Math.floor(ageDays), decayFactor, effectiveBase, actualIncome };
+}
 const CHECKIN_WINDOW = 24 * 60 * 60 * 1000;
 const CHECKIN_GRACE = 48 * 60 * 60 * 1000; // bu müddətdən sonra seriya sıfırlanır
 const CLAIM_COOLDOWN = 24 * 60 * 60 * 1000;
@@ -240,11 +254,10 @@ function renderHero() {
 
   let dailyIncome = 0;
   myCarsData.forEach((car) => {
-    const base = Number(car.dailyIncome || car.baseIncome || car.income || 0);
-    dailyIncome += base + base * vip.rate;
+    dailyIncome += getCarIncome(car, vip.rate).actualIncome;
   });
-  const yearlyIncome = dailyIncome * 365;
-  const roi = invested > 0 ? (yearlyIncome / invested) * 100 : 0;
+  const monthlyIncome = dailyIncome * 30;
+  const monthlyYield = invested > 0 ? (monthlyIncome / invested) * 100 : 0;
 
   if ($("hero-total")) {
     if (__prevHeroTotal === null) $("hero-total").textContent = fmt(total);
@@ -254,7 +267,7 @@ function renderHero() {
   if ($("stat-balance")) $("stat-balance").textContent = fmt(balance);
   if ($("stat-invested")) $("stat-invested").textContent = fmt(invested);
   if ($("stat-daily")) $("stat-daily").textContent = fmt(dailyIncome);
-  if ($("stat-roi")) $("stat-roi").textContent = `${roi.toFixed(0)}%`;
+  if ($("stat-roi")) $("stat-roi").textContent = invested > 0 ? `${monthlyYield.toFixed(1)}%` : "—";
   if ($("vip-badge-hero")) $("vip-badge-hero").textContent = vip.level;
 
   // Gauge (növbəti VIP səviyyəsinə qədər irəliləyiş)
@@ -511,8 +524,8 @@ function renderMyCars() {
   const vip = getVipInfo(currentUserData?.totalInvested || 0);
 
   list.innerHTML = myCarsData.map((car) => {
-    const baseIncome = Number(car.dailyIncome || car.baseIncome || car.income || 0);
-    const actualIncome = baseIncome + baseIncome * vip.rate;
+    const inc = getCarIncome(car, vip.rate);
+    const wearPct = Math.round((1 - inc.decayFactor) * 100);
     const lastClaim = Number(car.lastClaim) || 0;
     const left = CLAIM_COOLDOWN - (Date.now() - lastClaim);
     const ready = left <= 0;
@@ -521,10 +534,13 @@ function renderMyCars() {
       <div class="product-thumb">${productThumb(car)}</div>
       <div class="product-body">
         <h3>${escapeHTML(car.name || "Maşın")}</h3>
-        <div class="product-specs">Alış qiyməti: ${fmt(car.price)}</div>
+        <div class="product-specs">
+          Alış qiyməti: ${fmt(car.price)} · Yaş: ${inc.ageDays} gün
+          ${wearPct > 0 ? ` · <span style="color:var(--negative);">Aşınma: -${wearPct}%</span>` : ""}
+        </div>
         <div class="product-row">
           <div>
-            <div class="product-income">+${fmt(actualIncome)}/gün</div>
+            <div class="product-income">+${fmt(inc.actualIncome)}/gün</div>
             <span class="timer-chip ${ready ? "ready" : ""}" data-countdown="${car.id}" data-lastclaim="${lastClaim}">
               ${ready ? "Toplamaq üçün hazırdır!" : timeLeftLabel(left)}
             </span>
@@ -585,8 +601,7 @@ async function collectIncome(carId, btnEl) {
       const userData = userDoc.data();
 
       const vip = getVipInfo(userData.totalInvested || 0);
-      const baseIncome = Number(carData.dailyIncome || carData.baseIncome || carData.income || 0);
-      const actualIncome = round2(baseIncome + baseIncome * vip.rate);
+      const actualIncome = getCarIncome(carData, vip.rate).actualIncome;
       earned = actualIncome;
 
       const l1Uid = userData.referredBy || null;
@@ -1131,8 +1146,36 @@ function openProductForm(productId) {
   $("pf-speed").value = p?.speed || "";
   $("pf-image").value = p?.image || "";
   $("product-delete-btn").classList.toggle("hidden", !productId);
+  updateRoiHint();
   openModal("product-modal");
 }
+
+function updateRoiHint() {
+  const hint = $("pf-roi-hint");
+  const price = Number($("pf-price").value);
+  const income = Number($("pf-income").value);
+  if (!hint || !price || !income) { if (hint) hint.style.display = "none"; return; }
+
+  const monthlyPct = (income * 30 / price) * 100;
+  const annualPct = (income * 365 / price) * 100;
+  hint.style.display = "block";
+
+  if (monthlyPct > 40) {
+    hint.style.background = "var(--negative-soft)";
+    hint.style.color = "var(--negative)";
+    hint.innerHTML = `⚠️ Bu qiymət/gəlir nisbəti aylıq <b>${monthlyPct.toFixed(0)}%</b> (illik ${annualPct.toFixed(0)}%) gəlirliliyə bərabərdir — bu, real dünya investisiya platformalarında son dərəcə yüksək sayılır və istifadəçilərdə etibarsızlıq yarada bilər. Adətən 3–15% aylıq diapazon məqbul qəbul edilir.`;
+  } else if (monthlyPct > 15) {
+    hint.style.background = "var(--accent-glow)";
+    hint.style.color = "var(--accent-2)";
+    hint.innerHTML = `ℹ️ Aylıq gəlirlilik: <b>${monthlyPct.toFixed(1)}%</b> (illik ~${annualPct.toFixed(0)}%). Bu, yüksək tərəfdədir — nəzərdən keçirin.`;
+  } else {
+    hint.style.background = "var(--positive-soft)";
+    hint.style.color = "var(--positive)";
+    hint.innerHTML = `✓ Aylıq gəlirlilik: <b>${monthlyPct.toFixed(1)}%</b> (illik ~${annualPct.toFixed(0)}%) — məqbul diapazondadır.`;
+  }
+}
+$("pf-price")?.addEventListener("input", updateRoiHint);
+$("pf-income")?.addEventListener("input", updateRoiHint);
 
 $("product-save-btn")?.addEventListener("click", async () => {
   const name = $("pf-name").value.trim();
